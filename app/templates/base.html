@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fabric Inspection Prototype</title>
+
+    <script src="{{ url_for('static', filename='vendor/tailwindcss-cdn.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='vendor/alpine.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body class="min-h-screen app-bg text-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <header class="glass-panel rounded-2xl px-6 py-4 mb-6">
+            <div class="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold tracking-widest">Fabric Fault Detection & Inspection</h1>
+                    <p class="text-slate-300 text-sm md:text-base">PatchCore heatmaps, MVREC-ready classification, and 4-point decision support.</p>
+                </div>
+                <nav class="flex flex-wrap gap-3">
+                    <a href="{{ url_for('main.inspection') }}" class="nav-btn">Inspection</a>
+                    <a href="{{ url_for('adapt.adapt_home') }}" class="nav-btn">Few-Shot Adapt</a>
+                    <a href="{{ url_for('profiles.profiles_home') }}" class="nav-btn">Profiles</a>
+                    <a href="{{ url_for('profiles.dashboard') }}" class="nav-btn">Dashboard</a>
+                </nav>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2 mb-6">
+                    {% for category, message in messages %}
+                        <div class="rounded-xl px-4 py-3 text-sm
+                            {% if category == 'success' %}bg-emerald-600/20 border border-emerald-400/30{% elif category == 'warning' %}bg-amber-500/20 border border-amber-300/40{% elif category == 'danger' %}bg-rose-600/20 border border-rose-400/30{% else %}bg-slate-700/40 border border-slate-500/30{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

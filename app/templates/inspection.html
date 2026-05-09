@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set selected_mode = result['measurement_mode'] if result and result.get('measurement_mode') else 'auto_ratio' %}
+{% set selected_pattern_mode = result['pattern_mode'] if result and result.get('pattern_mode') else 'auto' %}
+{% set selected_fabric_override = result['fabric_override'] if result and result.get('fabric_override') else 'auto' %}
+{% set selected_support_shots = result['support_shots'] if result and result.get('support_shots') else 5 %}
+{% set cfg = {
+    "hasResult": result is not none,
+    "resultId": result["result_id"] if result else "",
+    "defaultHeatmapUrl": result["urls"]["heatmap"] if result else "",
+    "defaultBlendUrl": result["urls"]["blended"] if result else "",
+    "blendApi": url_for("main.blend_api"),
+    "localScoreApi": url_for("main.local_score_api"),
+    "defaultAlpha": result["default_alpha"] if result else 0.45,
+    "measurementMode": selected_mode,
+    "patternMode": selected_pattern_mode,
+} %}
+
+<div x-data='inspectionPage({{ cfg | tojson }})' x-init="init()" class="space-y-6">
+    <section class="glass-panel rounded-2xl p-5 md:p-6">
+        <h2 class="text-2xl font-semibold mb-4">Main Inspection</h2>
+        <form id="inspection-form" method="post" enctype="multipart/form-data" class="grid md:grid-cols-12 gap-4 items-end">
+            <div class="md:col-span-3">
+                <label class="text-sm text-slate-300 block mb-1">Upload Fabric Image</label>
+                <input type="file" id="inspection-image-input" name="image" accept="image/*" required class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-sm text-slate-300 block mb-1">Pattern Mode</label>
+                <select name="pattern_mode" x-model="patternMode" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <option value="auto" {% if selected_pattern_mode == 'auto' %}selected{% endif %}>Auto (Classifier)</option>
+                    <option value="unknown" {% if selected_pattern_mode == 'unknown' %}selected{% endif %}>Unknown (WinCLIP)</option>
+                </select>
+            </div>
+            <div class="md:col-span-2" x-show="patternMode === 'unknown'" style="display: none;">
+                <label class="text-sm text-slate-300 block mb-1">Fabric Type (WinCLIP)</label>
+                <select name="fabric_override" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <option value="auto" {% if selected_fabric_override == 'auto' %}selected{% endif %}>Auto</option>
+                    <option value="knitted" {% if selected_fabric_override == 'knitted' %}selected{% endif %}>Knitted</option>
+                    <option value="woven" {% if selected_fabric_override == 'woven' %}selected{% endif %}>Woven</option>
+                </select>
+            </div>
+            <div class="md:col-span-1" x-show="patternMode === 'unknown'" style="display: none;">
+                <label class="text-sm text-slate-300 block mb-1">Support Shots</label>
+                <select name="support_shots" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <option value="3" {% if selected_support_shots == 3 %}selected{% endif %}>3</option>
+                    <option value="5" {% if selected_support_shots == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if selected_support_shots == 10 %}selected{% endif %}>10</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-sm text-slate-300 block mb-1">Measurement Mode</label>
+                <select name="measurement_mode" x-model="measurementMode" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <option value="auto_ratio" {% if selected_mode == 'auto_ratio' %}selected{% endif %}>Auto Ratio</option>
+                    <option value="manual_area" {% if selected_mode == 'manual_area' %}selected{% endif %}>Manual Area (cm)</option>
+                </select>
+            </div>
+            <div class="md:col-span-1">
+                <label class="text-sm text-slate-300 block mb-1">Width (cm)</label>
+                <input type="number" name="fabric_width_cm" min="0.1" step="0.1" :disabled="measurementMode !== 'manual_area'" placeholder="60" value="{{ result['fabric_width_cm'] if result and result['fabric_width_cm'] is not none else '' }}" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed">
+            </div>
+            <div class="md:col-span-1">
+                <label class="text-sm text-slate-300 block mb-1">Height (cm)</label>
+                <input type="number" name="fabric_height_cm" min="0.1" step="0.1" :disabled="measurementMode !== 'manual_area'" placeholder="70" value="{{ result['fabric_height_cm'] if result and result['fabric_height_cm'] is not none else '' }}" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed">
+            </div>
+            <div class="md:col-span-1">
+                <button type="submit" class="primary-btn w-full h-[52px]">Inspect</button>
+            </div>
+            <div class="md:col-span-12" x-show="patternMode === 'unknown'" style="display: none;">
+                <label class="text-sm text-slate-300 block mb-1">WinCLIP Support Images</label>
+                <input type="file" id="support-images-input" name="support_images" accept="image/*" multiple @change="syncSupportFiles($event)" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                <p class="text-xs text-slate-400 mt-1">Upload at least the selected number of normal reference images.</p>
+            </div>
+            <div class="md:col-span-12">
+                <div class="rounded-2xl border border-slate-700/50 bg-slate-900/40 p-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-lg font-semibold">Live Camera Capture</h3>
+                        <span class="text-xs text-slate-400" x-show="!cameraSupported" style="display: none;">Camera access not supported.</span>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-4 items-start">
+                        <div class="md:col-span-2">
+                            <div class="aspect-video max-h-64 md:max-h-72 bg-slate-900/70 border border-slate-600/40 rounded-xl overflow-hidden flex items-center justify-center">
+                                <video id="live-camera-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            </div>
+                            <p class="text-xs text-rose-300 mt-2" x-show="cameraError" style="display: none;" x-text="cameraError"></p>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm text-slate-300 block mb-1">Camera Source</label>
+                                <select x-model="selectedDeviceId" @change="changeCamera()" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                                    <template x-for="(device, index) in videoDevices" :key="device.deviceId">
+                                        <option :value="device.deviceId" x-text="device.label ? device.label : ('Camera ' + (index + 1))"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" class="secondary-btn" @click="startCamera()" :disabled="cameraActive">Start</button>
+                                <button type="button" class="secondary-btn" @click="stopCamera()" :disabled="!cameraActive">Stop</button>
+                            </div>
+                            <button type="button" class="primary-btn w-full" @click="captureMainImage()" :disabled="!cameraActive">Capture Main Image</button>
+                            <div class="space-y-2" x-show="patternMode === 'unknown'" style="display: none;">
+                                <button type="button" class="secondary-btn w-full" @click="captureSupportImage()" :disabled="!cameraActive">Capture Support Image</button>
+                                <button type="button" class="secondary-btn w-full" @click="clearSupportFiles()">Clear Support Captures</button>
+                                <p class="text-xs text-slate-400">Support captures: <span x-text="supportCaptureCount">0</span></p>
+                            </div>
+                            <p class="text-xs text-slate-400">Captures fill the file inputs above. Inspect stays manual.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </section>
+
+    {% if result %}
+    <section class="grid lg:grid-cols-4 gap-4">
+        <article class="glass-panel rounded-2xl p-4">
+            <h3 class="text-lg font-semibold mb-2">Original</h3>
+            <img src="{{ result['urls']['original'] }}" alt="Original image" class="rounded-xl w-full border border-slate-600/30">
+        </article>
+        <article class="glass-panel rounded-2xl p-4">
+            <h3 class="text-lg font-semibold mb-2">Preprocessed (CLAHE)</h3>
+            <img src="{{ result['urls']['preprocessed'] }}" alt="Preprocessed image" class="rounded-xl w-full border border-slate-600/30">
+        </article>
+        <article class="glass-panel rounded-2xl p-4">
+            <h3 class="text-lg font-semibold mb-2">Defect Bounding Boxes</h3>
+            <img src="{{ result['urls']['bbox'] }}" alt="Defect bounding boxes" class="rounded-xl w-full border border-slate-600/30">
+            <p class="text-xs text-slate-300 mt-2">Connected defect regions visualized as bounding boxes.</p>
+        </article>
+        <article class="glass-panel rounded-2xl p-4">
+            <div class="flex items-center justify-between gap-3 mb-2">
+                <h3 class="text-lg font-semibold">Anomaly Heatmap</h3>
+                <span class="text-xs px-2 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400/40">Tap image for local score</span>
+            </div>
+
+            <img
+                id="heatmap-image"
+                :src="currentHeatmapSrc"
+                @click="requestLocalScore($event)"
+                alt="Anomaly heatmap"
+                class="rounded-xl w-full border border-cyan-400/30 cursor-crosshair shadow-lg shadow-cyan-500/10"
+            >
+
+            <div class="mt-4 space-y-3">
+                <label class="flex items-center justify-between gap-3">
+                    <span class="text-sm">Blend Heatmap on Original</span>
+                    <input type="checkbox" x-model="blendEnabled" @change="updateBlend()" class="h-5 w-5 accent-cyan-400">
+                </label>
+
+                <div>
+                    <div class="flex justify-between text-xs text-slate-300 mb-1">
+                        <span>Blend Transparency</span>
+                        <span x-text="Math.round(blendAlpha * 100) + '%'">45%</span>
+                    </div>
+                    <input type="range" min="0" max="1" step="0.05" x-model.number="blendAlpha" @input.debounce.150ms="updateBlend()" class="w-full">
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="grid lg:grid-cols-3 gap-4">
+        <article class="glass-panel rounded-2xl p-5 lg:col-span-1">
+            <h3 class="text-lg font-semibold mb-3">Inference Summary</h3>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between"><dt>Fabric Type</dt><dd class="font-semibold uppercase">{{ result['fabric_type'] }}</dd></div>
+                <div class="flex justify-between"><dt>Fabric Confidence</dt><dd>{{ '%.1f'|format(result['fabric_confidence'] * 100) }}%</dd></div>
+                <div class="flex justify-between"><dt>Pattern Type</dt><dd class="font-semibold uppercase">{{ result.get('pattern_type', 'plain') }}</dd></div>
+                <div class="flex justify-between"><dt>Pattern Confidence</dt><dd>{{ '%.1f'|format(result.get('pattern_confidence', 0.0) * 100) }}%</dd></div>
+                <div class="flex justify-between"><dt>Pattern Mode</dt><dd>
+                    {% if result.get('pattern_mode') == 'unknown' %}
+                        WinCLIP
+                    {% else %}
+                        Auto
+                    {% endif %}
+                </dd></div>
+                {% if result.get('pattern_mode') == 'unknown' %}
+                <div class="flex justify-between"><dt>Support Shots</dt><dd>{{ result.get('support_shots', 0) }}</dd></div>
+                {% endif %}
+                <div class="flex justify-between"><dt>Anomaly Route</dt><dd class="font-mono text-xs">{{ result.get('anomaly_route', 'n/a') }}</dd></div>
+                <div class="flex justify-between"><dt>Anomaly Score</dt><dd>{{ '%.3f'|format(result['anomaly_score']) }}</dd></div>
+                <div class="flex justify-between"><dt>Anomaly Class</dt><dd>{{ result['anomaly_class'] }}</dd></div>
+                <div class="flex justify-between"><dt>Class Confidence</dt><dd>{{ '%.1f'|format(result['anomaly_confidence'] * 100) }}%</dd></div>
+                <div class="flex justify-between"><dt>4-Point Score</dt><dd class="font-semibold">{{ result['four_point_score'] }}</dd></div>
+                <div class="flex justify-between"><dt>Measurement Mode</dt><dd>
+                    {% if result.get('measurement_mode') == 'manual_area' %}
+                        Manual Area
+                    {% else %}
+                        Auto Ratio
+                    {% endif %}
+                </dd></div>
+                <div class="flex justify-between"><dt>Fabric Size (cm)</dt><dd>
+                    {% if result['fabric_width_cm'] and result['fabric_height_cm'] %}
+                        {{ '%.1f'|format(result['fabric_width_cm']) }} x {{ '%.1f'|format(result['fabric_height_cm']) }}
+                    {% else %}
+                        n/a
+                    {% endif %}
+                </dd></div>
+                <div class="flex justify-between"><dt>Total Area (cm2)</dt><dd>
+                    {% if result['fabric_total_area_cm2'] %}
+                        {{ '%.2f'|format(result['fabric_total_area_cm2']) }}
+                    {% else %}
+                        n/a
+                    {% endif %}
+                </dd></div>
+                <div class="flex justify-between"><dt>Decision</dt><dd class="font-bold uppercase
+                    {% if result['decision'] == 'Accept' %}text-emerald-300{% elif result['decision'] == 'Hold' %}text-amber-300{% else %}text-rose-300{% endif %}">{{ result['decision'] }}</dd></div>
+            </dl>
+        </article>
+
+        <article class="glass-panel rounded-2xl p-5 lg:col-span-2">
+            <h3 class="text-lg font-semibold mb-3">Defect Components</h3>
+            {% if result['defects'] %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-slate-300 border-b border-slate-600/40">
+                                <th class="py-2 pr-3">Severity</th>
+                                <th class="py-2 pr-3">Score</th>
+                                <th class="py-2 pr-3">Area Ratio</th>
+                                <th class="py-2 pr-3">Area (cm2)</th>
+                                <th class="py-2 pr-3">Points</th>
+                                <th class="py-2 pr-3">BBox [x,y,w,h]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for defect in result['defects'] %}
+                                <tr class="border-b border-slate-700/30">
+                                    <td class="py-2 pr-3 uppercase">{{ defect['severity'] }}</td>
+                                    <td class="py-2 pr-3">{{ '%.3f'|format(defect['score']) }}</td>
+                                    <td class="py-2 pr-3">{{ '%.4f'|format(defect['area_ratio']) }}</td>
+                                    <td class="py-2 pr-3">
+                                        {% if defect['area_cm2'] is not none %}
+                                            {{ '%.3f'|format(defect['area_cm2']) }}
+                                        {% else %}
+                                            n/a
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2 pr-3">{{ defect['points'] }}</td>
+                                    <td class="py-2 pr-3 font-mono text-xs">{{ defect['bbox'] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-slate-300 text-sm">No significant defect components passed the current pixel threshold.</p>
+            {% endif %}
+        </article>
+    </section>
+    {% endif %}
+
+    <section class="glass-panel rounded-2xl p-5">
+        <h3 class="text-lg font-semibold mb-3">Recent Inspections</h3>
+        {% if recent_runs %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-slate-300 border-b border-slate-600/40">
+                            <th class="py-2 pr-3">ID</th>
+                            <th class="py-2 pr-3">Fabric</th>
+                            <th class="py-2 pr-3">Score</th>
+                            <th class="py-2 pr-3">Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in recent_runs %}
+                            <tr class="border-b border-slate-700/30">
+                                <td class="py-2 pr-3 font-mono text-xs">{{ row.result_id[:12] }}</td>
+                                <td class="py-2 pr-3 uppercase">{{ row.fabric_type }}</td>
+                                <td class="py-2 pr-3">{{ '%.3f'|format(row.anomaly_score) }}</td>
+                                <td class="py-2 pr-3">{{ row.decision }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-slate-300 text-sm">No inspections yet.</p>
+        {% endif %}
+    </section>
+
+    <div
+        x-show="modalOpen"
+        x-transition
+        class="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4"
+        style="display: none"
+    >
+        <div class="w-full max-w-md rounded-2xl bg-slate-900 border border-cyan-500/30 p-5">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xl font-semibold">Heatmap Probe</h3>
+                <button type="button" @click="modalOpen = false" class="secondary-btn">Close</button>
+            </div>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between"><dt>Coordinates</dt><dd x-text="'(' + probeData.x + ', ' + probeData.y + ')'">(0, 0)</dd></div>
+                <div class="flex justify-between"><dt>Local Anomaly Score</dt><dd x-text="Number(probeData.local_score || 0).toFixed(4)">0.0000</dd></div>
+                <div class="flex justify-between"><dt>Suggested Defect Type</dt><dd x-text="probeData.suggested_defect || 'n/a'">n/a</dd></div>
+            </dl>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/inspection.js') }}"></script>
+{% endblock %}

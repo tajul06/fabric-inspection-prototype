@@ -1,0 +1,97 @@
+:root {
+    --panel-bg: rgba(12, 20, 35, 0.68);
+    --panel-border: rgba(96, 165, 250, 0.25);
+    --primary: #22d3ee;
+    --primary-dark: #0e7490;
+    --secondary: #fbbf24;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Bahnschrift", "Segoe UI Variable", "Segoe UI", "Trebuchet MS", sans-serif;
+    letter-spacing: 0.02em;
+}
+
+.app-bg {
+    background:
+        radial-gradient(1200px 500px at -10% -10%, rgba(56, 189, 248, 0.18), transparent),
+        radial-gradient(1100px 500px at 110% -10%, rgba(34, 211, 238, 0.14), transparent),
+        linear-gradient(145deg, #020617 0%, #081426 45%, #04111f 100%);
+}
+
+.glass-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 35px rgba(2, 6, 23, 0.45);
+}
+
+.nav-btn,
+.primary-btn,
+.secondary-btn {
+    border-radius: 0.9rem;
+    padding: 0.7rem 1.1rem;
+    transition: all 180ms ease;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+}
+
+.nav-btn {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.65);
+}
+
+.nav-btn:hover {
+    border-color: rgba(34, 211, 238, 0.8);
+    color: #cffafe;
+}
+
+.primary-btn {
+    color: #00131a;
+    background: linear-gradient(120deg, var(--primary), #38bdf8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 25px rgba(34, 211, 238, 0.25);
+}
+
+.primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(56, 189, 248, 0.35);
+}
+
+.secondary-btn {
+    color: #fde68a;
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    background: rgba(113, 63, 18, 0.28);
+}
+
+.secondary-btn:hover {
+    background: rgba(217, 119, 6, 0.34);
+}
+
+input[type="range"] {
+    accent-color: var(--primary);
+}
+
+img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+@media (max-width: 768px) {
+    .primary-btn,
+    .nav-btn,
+    .secondary-btn {
+        min-height: 48px;
+        font-size: 0.8rem;
+    }
+}

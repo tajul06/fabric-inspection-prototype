@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid xl:grid-cols-2 gap-6 mb-6">
+    <section class="glass-panel rounded-2xl p-5 md:p-6 border border-cyan-400/20">
+        <div class="flex items-center justify-between gap-3 mb-3">
+            <h2 class="text-2xl font-semibold">WinCLIP Anomaly Detector</h2>
+            <span class="text-xs px-2 py-1 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-100">Detector flow</span>
+        </div>
+        <p class="text-sm text-slate-300 mb-4">
+            Use this section to test the detector path with a query image and optional normal reference samples.
+        </p>
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            <input type="hidden" name="adapt_action" value="detector">
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm text-slate-300 block mb-1">Query Fabric Image</label>
+                    <input type="file" name="image" accept="image/*" required class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300 block mb-1">Normal Samples</label>
+                    <input type="file" name="normal_samples" accept="image/*" multiple class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <p class="text-xs text-slate-400 mt-1">Optional reference images for detector-style few-shot runs.</p>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm text-slate-300 block mb-1">Notes</label>
+                <input type="text" name="notes" placeholder="Optional" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+            </div>
+            <button type="submit" class="primary-btn w-full md:w-auto">Run WinCLIP Detector</button>
+        </form>
+    </section>
+
+    <section class="glass-panel rounded-2xl p-5 md:p-6 border border-emerald-400/20">
+        <div class="flex items-center justify-between gap-3 mb-3">
+            <h2 class="text-2xl font-semibold">Anomaly Classifier</h2>
+            <span class="text-xs px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-100">Support-set flow</span>
+        </div>
+        <p class="text-sm text-slate-300 mb-4">
+            Add class-labeled support images for the knitted or woven prototype classifier, then optionally test a query image.
+        </p>
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            <input type="hidden" name="adapt_action" value="classifier">
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm text-slate-300 block mb-1">Support Fabric Type</label>
+                    <select name="support_fabric" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                        <option value="knitted">Knitted</option>
+                        <option value="woven">Woven</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300 block mb-1">Support Class Label</label>
+                    <input type="text" name="support_class" placeholder="e.g. hole_or_tear" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300 block mb-1">Support Set Images</label>
+                    <input type="file" name="support_set" accept="image/*" multiple class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <p class="text-xs text-slate-400 mt-1">Saved to the selected fabric support library.</p>
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300 block mb-1">Query Fabric Image</label>
+                    <input type="file" name="image" accept="image/*" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <p class="text-xs text-slate-400 mt-1">Optional if you only want to add support images.</p>
+                </div>
+                <div>
+                    <label class="text-sm text-slate-300 block mb-1">Normal Samples</label>
+                    <input type="file" name="normal_samples" accept="image/*" multiple class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+                    <p class="text-xs text-slate-400 mt-1">Legacy input (optional).</p>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm text-slate-300 block mb-1">Notes</label>
+                <input type="text" name="notes" placeholder="Optional" class="w-full rounded-xl px-4 py-3 bg-slate-900/70 border border-slate-600/40 text-slate-100">
+            </div>
+            <button type="submit" class="primary-btn w-full md:w-auto">Update Support / Run Classifier</button>
+        </form>
+    </section>
+</div>
+
+{% if result %}
+<section class="glass-panel rounded-2xl p-5 mb-6">
+    <h3 class="text-lg font-semibold mb-3">Latest Adaptation Result</h3>
+        <div class="grid md:grid-cols-3 gap-3 text-sm">
+            <div class="flex justify-between"><dt>Fabric Type</dt><dd class="font-semibold uppercase">{{ result['fabric_type'] }}</dd></div>
+            <div class="flex justify-between"><dt>Pattern Type</dt><dd class="font-semibold uppercase">{{ result.get('pattern_type', 'plain') }}</dd></div>
+            <div class="flex justify-between"><dt>Anomaly Route</dt><dd class="font-mono text-xs">{{ result.get('anomaly_route', 'n/a') }}</dd></div>
+            <div class="flex justify-between"><dt>Pattern Confidence</dt><dd>{{ '%.1f'|format(result.get('pattern_confidence', 0.0) * 100) }}%</dd></div>
+            <div class="flex justify-between"><dt>Anomaly Score</dt><dd>{{ '%.3f'|format(result['anomaly_score']) }}</dd></div>
+            <div class="flex justify-between"><dt>Few-shot Samples</dt><dd>{{ result.get('fewshot_samples_used', 0) }}/5</dd></div>
+            <div class="flex justify-between"><dt>Support Added</dt><dd>{{ result.get('support_set_added', 0) }}</dd></div>
+            <div class="flex justify-between"><dt>Support Class</dt><dd>{{ result.get('support_class', 'n/a') }}</dd></div>
+            <div class="flex justify-between"><dt>Support Fabric</dt><dd>{{ result.get('support_fabric', 'n/a') }}</dd></div>
+        </div>
+</section>
+{% endif %}
+
+<section class="glass-panel rounded-2xl p-5">
+    <h3 class="text-lg font-semibold mb-3">Adaptation History</h3>
+    {% if runs %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-slate-300 border-b border-slate-600/40">
+                        <th class="py-2 pr-3">Time</th>
+                        <th class="py-2 pr-3">Shots</th>
+                        <th class="py-2 pr-3">Fabric</th>
+                        <th class="py-2 pr-3">Support</th>
+                        <th class="py-2 pr-3">Status</th>
+                        <th class="py-2 pr-3">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                        <tr class="border-b border-slate-700/30">
+                            <td class="py-2 pr-3">{{ run.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td class="py-2 pr-3">{{ run.shots }}</td>
+                            <td class="py-2 pr-3 uppercase">{{ run.fabric_type }}</td>
+                            <td class="py-2 pr-3">{{ run.support_samples }}</td>
+                            <td class="py-2 pr-3">{{ run.status }}</td>
+                            <td class="py-2 pr-3">{{ run.notes }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-slate-300 text-sm">No few-shot adaptation runs yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

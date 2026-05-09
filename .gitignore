@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+virtualenv/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# ML/Data files - Large model files and processed data
+*.pth
+*.pt
+*.onnx
+*.pb
+*.h5
+*.npy
+*.npz
+*.pkl
+*.pickle
+
+# Project-specific
+processed/
+uploads/
+cache/
+*.log
+debug_*.py
+
+# Build outputs
+build/
+dist/
+*.spec
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Misc
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.env.local
