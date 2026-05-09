@@ -12,6 +12,9 @@ A Flask-based web application for automated fabric defect detection, classificat
 - **Anomaly Detection**: 
   - PatchCore models for knitted and woven fabrics.
   - Produces anomaly score and per-pixel anomaly maps with heatmap visualization.
+- **Anomaly Classification**:
+  - Prototypical networks for fine-grained anomaly type classification.
+  - Refines generic anomaly predictions with class-specific defect categorization.
 - **Defect Analysis**: Connected component analysis for defect localization, bounding boxes, and severity classification.
 - **Measurement Mode**: 
   - Auto Ratio: Calculates fabric dimensions based on aspect ratio.
@@ -404,6 +407,10 @@ build_cuda.bat
 - **PatchCore**: https://github.com/open-edge-platform/anomalib
 - **WinCLIP**: anomalib WinClipModel (built-in).
 - Docs: https://anomalib.readthedocs.io/
+
+### Few-Shot Learning & Prototypical Networks
+- **Easy-FSL**: https://github.com/sicara/easy-few-shot-learning
+- **Prototypical Networks**: Snell et al., "Prototypical Networks for Few-shot Learning" (NIPS 2017).
 
 ### Model Architectures
 - **ResNet50**: torchvision.models
