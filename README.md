@@ -86,10 +86,14 @@ fabric-inspection-prototype/
    - Fabric type (knitted/woven) → ResNet50.
    - Pattern type → Classifier (auto) or WinCLIP (unknown).
 4. **Anomaly Detection**: PatchCore model for detected fabric type → anomaly score + map.
-5. **Defect Analysis**: Connected components, bounding boxes, severity scoring.
-6. **Measurement**: Area calculation (auto-ratio or manual).
-7. **Decision**: 4-point scale (Pass/Hold/Reject) based on anomaly score + defect count/severity.
-8. **Output**: Result stored in database; images saved to `processed/`.
+5. **Prototypical Classification**: If prototypical network enabled for fabric type:
+   - Extract region of interest from anomaly map (or full image if no significant anomaly).
+   - Embed via ResNet18 backbone → Euclidean distance to class prototypes.
+   - Refine anomaly class prediction with prototypical network output.
+6. **Defect Analysis**: Connected components, bounding boxes, severity scoring.
+7. **Measurement**: Area calculation (auto-ratio or manual).
+8. **Decision**: 4-point scale (Pass/Hold/Reject) based on anomaly score + defect count/severity.
+9. **Output**: Result stored in database; images saved to `processed/`.
 
 ## ML Models
 
@@ -120,10 +124,23 @@ fabric-inspection-prototype/
 - **Output**: Anomaly score + map, specific to the provided reference set.
 - **Framework**: anomalib WinClipModel with CLIP backbone.
 
-### 5. Prototypical Knitted Classifier (Optional)
-- **Purpose**: Proto-style anomaly classification for knitted fabrics.
-- **Path**: `knitten anomaly classifier/support/` (class-based reference images).
-- **Usage**: If enabled, uses prototypical learning instead of PatchCore for knitted.
+### 5. Prototypical Networks (Knitted & Woven)
+- **Purpose**: Few-shot anomaly classification for knitted and woven fabrics using prototypical networks.
+- **Backbone**: ResNet18 for embedding extraction (224×224 input).
+- **Architecture**:
+  - Support images organized in class folders (e.g., `support/normal/`, `support/defect_type_1/`).
+  - Class prototypes computed as mean embedding across all support images for that class.
+  - Query image embedded and classified via Euclidean distance to prototypes.
+  - Softmax applied to distances to produce class probabilities.
+- **Support Paths**:
+  - Knitted: `knitten anomaly classifier/support/` (class subdirectories with reference images).
+  - Woven: `woven anomaly classifier/support/` (class subdirectories with reference images).
+- **Model Checkpoints**:
+  - Knitted: `knitten anomaly classifier/best_proto_fabric_model.pth`.
+  - Woven: `woven anomaly classifier/best_proto_fabric_model.pth` (if available).
+- **Dynamic Support Reloading**: Support images are monitored for changes; prototypes automatically recomputed if new reference images added/removed.
+- **Integration**: Used as secondary classifier after anomaly detection; refines anomaly class predictions based on fine-grained fabric characteristics.
+- **Output**: Class label (e.g., "normal", "defect_type_1") + confidence (0–1).
 
 ## Setup
 
@@ -253,6 +270,34 @@ build_cuda.bat
 5. Click "Inspect" → WinCLIP compares main image against the 5 reference images.
 6. Result: Anomaly score tailored to your fabric's reference set.
 
+### Prototypical Network Classification
+
+**Overview**: The prototypical network provides fine-grained anomaly classification by learning from a few reference images per defect class.
+
+**Setup:**
+1. Organize support images in folder structure:
+   - `knitten anomaly classifier/support/normal/` → Images of normal knitted fabric.
+   - `knitten anomaly classifier/support/defect_type_1/` → Images of specific defect type.
+   - `knitten anomaly classifier/support/defect_type_2/` → Additional defect types.
+   - (Same structure for woven in `woven anomaly classifier/support/`)
+2. Place 5–20 reference images per class (more examples = better prototypes).
+3. Restart server; prototypical classifiers load automatically if checkpoints available.
+
+**How It Works:**
+1. ResNet18 embeds all support images → Compute class prototype (mean embedding).
+2. During inference, anomalous image region extracted and embedded.
+3. Euclidean distance computed to each class prototype.
+4. Class with smallest distance selected; softmax produces confidence.
+5. Anomaly class prediction refined from generic to specific.
+
+**Dynamic Updates:**
+- Support image folders monitored for changes.
+- New/removed images automatically trigger prototype recomputation.
+- No server restart needed for support image updates.
+
+**Result Routing:**
+- Routes track which model provided final classification: e.g., `patchcore:knitted_proto_crop` = PatchCore detected anomaly, knitted proto classifier refined class using cropped region.
+
 ## API Endpoints
 
 ### Main Routes
@@ -326,6 +371,23 @@ build_cuda.bat
 1. Place `.ckpt` or `.pt` checkpoint in `models/` folder.
 2. Update `ml_models.py` model discovery logic.
 3. Restart server.
+
+### Extending Prototypical Networks
+
+**Add New Defect Classes:**
+1. Create subdirectories in support folder:
+   - `knitten anomaly classifier/support/new_defect_class/` or `woven anomaly classifier/support/new_defect_class/`
+2. Add 5–20 reference images per class (PNG/JPG format).
+3. Server automatically detects and reloads prototypes on next inference.
+4. New class predictions appear in inspection results.
+
+**Train Custom Prototypical Backbone:**
+- Current implementation uses pre-trained ResNet18.
+- To fine-tune or train custom backbone:
+  1. Prepare labeled dataset with defect class folders.
+  2. Train ResNet18 variant using existing `best_proto_fabric_model.pth` checkpoint.
+  3. Save trained weights to `knitten anomaly classifier/best_proto_fabric_model.pth` or woven equivalent.
+  4. Server auto-loads updated checkpoint on restart.
 
 ### Customizing the UI
 - Edit `app/templates/inspection.html` for layout/controls.
