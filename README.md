@@ -153,6 +153,39 @@ fabric-inspection-prototype/
 - **Dynamic Support Reloading**: Support images are monitored for changes; prototypes automatically recomputed if new reference images added/removed.
 - **Integration**: Used as secondary classifier after anomaly detection; refines anomaly class predictions based on fine-grained fabric characteristics.
 - **Output**: Class label (e.g., "normal", "defect_type_1") + confidence (0–1).
+## Results
+
+### Pattern Classification
+| Knitted (2 classes) | Woven (23 classes) |
+|---|---|
+| <img width="1396" height="1160" alt="fig_4_7a_knitted_cm" src="https://github.com/user-attachments/assets/04ef108d-653a-411c-9d32-288c9d9f9135" /> | <img width="4161" height="3561" alt="fig_4_7b_woven_cm" src="https://github.com/user-attachments/assets/08c08199-270e-4094-acbf-d91918460855" />|
+
+### Anomaly Detection Performance
+
+Per-pattern PatchCore evaluation across all 22 woven patterns achieved a mean 
+image-level AUROC of **96.8%**, substantially outperforming the fabric-level 
+baseline of 86.92%. 18 of 22 patterns scored 98–100% AUROC; the remaining 
+four (mostly floral prints) ranged 80.5–94.7%, likely due to higher intra-class 
+visual variance.
+
+<img width="2963" height="2662" alt="fig_4_8_woven_patchcore" src="https://github.com/user-attachments/assets/34e10df9-644b-4366-b2c2-1330b4df6ee5" />
+
+### Defect Type Classification
+
+Using Prototypical Networks (ResNet-18 backbone) to classify defect type once 
+an anomaly is localized:
+
+| Woven (7 classes, TILDA) | Knitted (5 classes, ISL-Knit) |
+|---|---|
+| <img width="2184" height="1755" alt="fig_4_10a_proto_woven_cm" src="https://github.com/user-attachments/assets/9e3c5a87-2ee8-4e58-a659-d10121c8db54" /> | <img width="1905" height="1456" alt="fig_4_10b_proto_knitted_cm" src="https://github.com/user-attachments/assets/8df217a4-a4c9-40aa-899a-dbcf64bb748b" /> |
+| **94.44%** val accuracy | **78.20%** val accuracy |
+
+Woven defect classification performs near-perfectly across all 7 classes. 
+Knitted defect classification is weaker (78.2%), with most confusion between 
+visually similar classes — Snag/Stain and Hole/Thread Defect.
+
+### Decision Engine — Severity Scoring
+<img width="1568" height="1654" alt="fig_4_3_decision_tree" src="https://github.com/user-attachments/assets/6a7a30ff-fd67-4b93-94c4-3619f5a38a5d" />
 
 ## Setup
 
