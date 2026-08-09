@@ -2,6 +2,8 @@
 
 A Flask-based web application for automated fabric defect detection, classification, and anomaly scoring using deep learning models. Supports both knitted and woven fabrics with real-time inspection feedback and live camera capture.
 
+<img width="1426" height="1100" alt="fig_4_12_inspection_results" src="https://github.com/user-attachments/assets/b646d189-bc62-4086-92ec-52841acabff8" />
+
 ## Features
 
 ### Core Inspection Capabilities
@@ -31,8 +33,13 @@ A Flask-based web application for automated fabric defect detection, classificat
 - **CLAHE Preprocessing**: Contrast-limited adaptive histogram equalization for enhanced feature detection.
 - **Heatmap Blending**: Overlay anomaly heatmaps on original images with adjustable transparency.
 - **Automatic Resizing**: Handles various input image sizes with proper aspect ratio preservation.
+<img width="1364" height="1244" alt="fig_4_11_clahe_comparison" src="https://github.com/user-attachments/assets/8c23aa64-0090-45dc-bbff-33018cc24813" />
 
 ## Architecture
+
+<img width="1024" height="1024" alt="figure_3_1_system_architecture" src="https://github.com/user-attachments/assets/dc8a8f9b-bb1c-42bb-981c-dd81c179a317" />
+
+
 
 ### Project Structure
 
@@ -82,6 +89,7 @@ fabric-inspection-prototype/
 ```
 
 ### Data Flow
+<img width="1568" height="2666" alt="fig_4_2_pipeline_flowchart" src="https://github.com/user-attachments/assets/259ff229-d001-4b19-b7c0-a2ff67436da0" />
 
 1. **Input**: User uploads image or captures via live camera.
 2. **Preprocessing**: CLAHE contrast enhancement applied.
@@ -104,6 +112,7 @@ fabric-inspection-prototype/
 - **Purpose**: Classify input as knitted or woven.
 - **Path**: `Fabric_classifier/restnet50/resnet50_run/best_model.pt` or portable `models/fabric_classifier_resnet50.pt`.
 - **Output**: Class + confidence.
+  
 
 ### 2. Pattern Classifier (EfficientNet)
 - **Purpose**: Classify fabric pattern (e.g., plain, stripe, print, plaid).
@@ -195,6 +204,12 @@ Edit `app/config.py` if needed:
 - `MAX_CONTENT_LENGTH`: Max upload size (default 25 MB).
 
 ## Running the Application
+
+<img width="1920" height="1080" alt="figure_3_6_webapp_ui (a)" src="https://github.com/user-attachments/assets/752f410a-0502-4c41-9641-864ab553c076" />
+<img width="1920" height="1080" alt="figure_3_6_webapp_ui (b)" src="https://github.com/user-attachments/assets/d132cd07-6057-4994-a618-19386bd8784b" />
+<img width="1920" height="1080" alt="figure_3_6_webapp_ui (c)" src="https://github.com/user-attachments/assets/9b7b3ffc-0ce8-447e-bd7a-cdf744c311c8" />
+
+
 
 ### Development Server
 ```bash
