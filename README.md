@@ -203,6 +203,14 @@ Edit `app/config.py` if needed:
 - `MODEL_DIR`: Model checkpoint search path.
 - `MAX_CONTENT_LENGTH`: Max upload size (default 25 MB).
 
+## Dataset
+
+Trained and evaluated across five fabric datasets covering woven and knitted 
+defect/pattern samples (AITEX, TILDA, ZJU-Leaper, TFD, ISL-Knit).
+
+<img width="990" height="1918" alt="fig_4_1_dataset_samples" src="https://github.com/user-attachments/assets/1780e45e-93df-4f33-8bc3-5c1f1c14f5d3" />
+
+
 ## Running the Application
 
 <img width="1920" height="1080" alt="figure_3_6_webapp_ui (a)" src="https://github.com/user-attachments/assets/752f410a-0502-4c41-9641-864ab553c076" />
